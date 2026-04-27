@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOUR NAME | Photographer</title>
+    <style>
+        /* ================= 基础重置与排版 ================= */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background-color: #ffffff;
+            color: #111111;
+            line-height: 1.5;
+            font-size: 14px;
+            -webkit-font-smoothing: antialiased;
+            overflow: hidden; /* 彻底禁用全页滚动 */
+        }
+        a {
+            color: #111111;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        ul { list-style: none; }
+
+        /* ================= 页面布局结构 ================= */
+        .container {
+            display: flex;
+            height: 100vh; /* 固定为屏幕高度 */
+            width: 100vw;
+        }
+
+        /* ================= 左侧：项目导航栏 ================= */
+        .sidebar {
+            width: 260px;
+            height: 100vh;
+            padding: 50px 40px;
+            background-color: #ffffff;
+            z-index: 100;
+            border-right: 1px solid #f9f9f9; /* 加一条极淡的分割线区分区域 */
+            overflow-y: auto;
+        }
+        .site-title {
+            font-size: 16px;
+            font-weight: normal;
+            margin-bottom: 50px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .nav-category {
+            font-size: 11px;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 30px 0 10px 0;
+        }
+        .nav-category:first-of-type { margin-top: 0; } 
+        .nav-menu li { margin-bottom: 10px; }
+        .nav-menu li a {
+            color: #666;
+            transition: color 0.2s;
+            display: block;
+        }
+        .nav-menu li a.active {
+            color: #000;
+            text-decoration: underline;
+        }
+
+        /* ================= 右侧：作品展示区 (幻灯片容器) ================= */
+        .content {
+            position: relative; /* 关键：为了绝对定位子元素 */
+            flex: 1; /* 占据剩余全部宽度 */
+            height: 100vh;
+            padding: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 全局点击翻页热区 */
+        .nav-zone {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            width: 50%;
+            z-index: 50; /* 悬浮在图片之上 */
+        }
+        .nav-left {
+            left: 0;
+            cursor: w-resize; /* 鼠标变为向左箭头 */
+        }
+        .nav-right {
+            right: 0;
+            cursor: e-resize; /* 鼠标变为向右箭头 */
+        }
+
+        /* 隐藏未激活的项目组 */
+        .gallery-section {
+            display: none;
+            width: 100%;
+            height: 100%;
+        }
+        .gallery-section.active {
+            display: block;
+        }
+
+        /* 单个幻灯片（文字或图片） */
+        .artwork {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none; /* 隐藏时不响应点击 */
+            transition: opacity 0.3s ease; /* 淡入淡出效果 */
+        }
+        .artwork.active {
+            opacity: 1;
+            /* z-index 设为1，在 nav-zone 之下，确保点击热区有效 */
+            z-index: 1; 
+        }
+
+        /* 确保文字链接在最顶层可以被点击，不会被左右翻页区域挡住 */
+        .text-content {
+            position: relative;
+            z-index: 100;
+            pointer-events: auto; 
+        }
+
+        /* 项目前言排版居中 */
+        .project-statement {
+            max-width: 500px;
+            font-size: 14px;
+            color: #333;
+            text-align: left;
+        }
+
+        /* 自适应图片核心逻辑 */
+        .artwork img {
+            max-width: 100%;
+            max-height: 85vh; /* 留出底部空间给 caption */
+            object-fit: contain; /* 保证图片比例完整呈现，不裁剪 */
+            user-select: none; /* 防止双击时变蓝选中 */
+        }
+        
+        .caption {
+            margin-top: 15px;
+            font-size: 12px;
+            color: #777;
+            text-align: center;
+        }
+
+        /* 右下角页码计数器 */
+        .slide-counter {
+            position: absolute;
+            bottom: 30px;
+            right: 40px;
+            font-size: 11px;
+            color: #999;
+            z-index: 60;
+            letter-spacing: 1px;
+        }
+
+        /* ================= 移动端响应式 ================= */
+        @media (max-width: 800px) {
+            .container { flex-direction: column; height: 100vh; overflow: hidden;}
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 35vh; /* 手机端导航栏不宜过高 */
+                padding: 20px;
+                border-right: none;
+                border-bottom: 1px solid #f0f0f0;
+            }
+            .content {
+                padding: 20px;
+                height: 65vh; /* 剩下的高度给图片 */
+            }
+            .artwork img {
+                max-height: 100%; 
+            }
+            .slide-counter {
+                bottom: 15px;
+                right: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- 左侧导航栏 -->
+        <aside class="sidebar">
+            <h1 class="site-title"><a href="#" class="nav-link" data-target="selected">YOUR NAME</a></h1>
+            
+            <ul class="nav-menu">
+                <li><a href="#" class="nav-link active" data-target="selected">Selected Works</a></li>
+                
+                <div class="nav-category">Projects</div>
+                <li><a href="#" class="nav-link" data-target="project1">The Silent Room (2023)</a></li>
+                <li><a href="#" class="nav-link" data-target="project2">Nowhere Fast (2021-22)</a></li>
+                
+                <div class="nav-category">Editorial</div>
+                <li><a href="#" class="nav-link" data-target="editorial1">i-D Magazine</a></li>
+                <li><a href="#" class="nav-link" data-target="editorial2">WSJ. Magazine</a></li>
+                
+                <div class="nav-category">Info</div>
+                <li><a href="#" class="nav-link" data-target="about">CV & Contact</a></li>
+            </ul>
+        </aside>
+
+        <!-- 右侧作品展示区 -->
+        <main class="content">
+            
+            <!-- 全局点击翻页热区 -->
+            <div class="nav-zone nav-left" onclick="changeSlide(-1)"></div>
+            <div class="nav-zone nav-right" onclick="changeSlide(1)"></div>
+            
+            <!-- 右下角计数器 -->
+            <div id="global-counter" class="slide-counter"></div>
+
+            <!-- 0. Selected Works -->
+            <section id="selected" class="gallery-section active">
+                <!-- 第一张图，加上 active 类让它默认显示 -->
+                <div class="artwork active">
+                    <img src="distortion/distortion image -1.jpg" alt="Distortion 1">
+                    <div class="caption">Untitled, from 'The Silent Room', 2023.</div>
+                </div>
+                <!-- 第二张图 -->
+                <div class="artwork">
+                    <img src="https://images.unsplash.com/photo-1610420496181-4475cc519ec3?q=80&w=1500&auto=format&fit=crop" alt="Selected 2">
+                    <div class="caption">Portrait of M, 2022.</div>
+                </div>
+            </section>
+
+            <!-- 1. 个人项目 1 -->
+            <section id="project1" class="gallery-section">
+                <!-- 把前言作为 第1张幻灯片 -->
+                <div class="artwork">
+                    <div class="text-content project-statement">
+                        <p style="margin-bottom: 15px;"><strong>The Silent Room (2023)</strong></p>
+                        <p style="color: #666; line-height: 1.6;">This project explores the relationship between domestic spaces and personal memory. Photographed over a period of six months in various abandoned interiors.</p>
+                    </div>
+                </div>
+                <!-- 图片作为后续的幻灯片 -->
+                <div class="artwork">
+                    <img src="https://images.unsplash.com/photo-1481277542470-605612bd2d61?q=80&w=1500&auto=format&fit=crop" alt="Project 1 - 1">
+                </div>
+                <div class="artwork">
+                    <img src="https://images.unsplash.com/photo-1505069270514-63fcb0079024?q=80&w=1500&auto=format&fit=crop" alt="Project 1 - 2">
+                </div>
+            </section>
+
+            <!-- 2. 个人项目 2 -->
+            <section id="project2" class="gallery-section">
+                <div class="artwork">
+                    <div class="text-content project-statement">
+                        <p style="margin-bottom: 15px;"><strong>Nowhere Fast (2021-2022)</strong></p>
+                        <p style="color: #666; line-height: 1.6;">A road trip across the American Southwest, documenting the aesthetics of isolation.</p>
+                    </div>
+                </div>
+                <div class="artwork">
+                    <img src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=1500&auto=format&fit=crop" alt="Project 2 - 1">
+                </div>
+                <div class="artwork">
+                    <img src="https://images.unsplash.com/photo-1433838552652-f9a46b332c40?q=80&w=1500&auto=format&fit=crop" alt="Project 2 - 2">
+                </div>
+            </section>
+
+            <!-- 3. Editorial 1 -->
+            <section id="editorial1" class="gallery-section">
+                <div class="artwork">
+                    <div class="text-content project-statement">
+                        <p style="margin-bottom: 15px;"><strong>i-D Magazine</strong> / Spring 2023 Issue</p>
+                        <p style="color: #666; line-height: 1.6;">Styling by [Stylist Name]. Featuring [Model Name].</p>
+                    </div>
+                </div>
+                <div class="artwork">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1500&auto=format&fit=crop" alt="Editorial 1 - 1">
+                </div>
+                <div class="artwork">
+                    <img src="https://images.unsplash.com/photo-1512413913424-c43ed7ce90af?q=80&w=1500&auto=format&fit=crop" alt="Editorial 1 - 2">
+                </div>
+            </section>
+
+            <!-- 4. Editorial 2 -->
+            <section id="editorial2" class="gallery-section">
+                <div class="artwork">
+                    <div class="text-content project-statement">
+                        <p><strong>WSJ. Magazine</strong> / Fall Fashion 2022</p>
+                    </div>
+                </div>
+                <div class="artwork">
+                    <img src="https://images.unsplash.com/photo-1550684376-efcbd6e3f031?q=80&w=1500&auto=format&fit=crop" alt="Editorial 2 - 1">
+                </div>
+            </section>
+
+            <!-- 5. CV & Contact -->
+            <!-- 这里只包含一张幻灯片（也就是纯文字的简历） -->
+            <section id="about" class="gallery-section">
+                <div class="artwork">
+                    <div class="text-content project-statement" style="max-width: 600px;">
+                        <p style="margin-bottom: 30px; font-size: 16px;">
+                            Your Name (b. 199X) is an artist and photographer working across documentary, portraiture, and editorial photography.
+                        </p>
+                        
+                        <h3 style="font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 10px;">Select Exhibitions</h3>
+                        <ul style="margin-bottom: 30px; font-size: 13px; line-height: 2;">
+                            <li>2024 - <em>Group Show</em>, Contemporary Art Space, London, UK</li>
+                            <li>2023 - <em>Solo Exhibition</em>, Gallery XYZ, New York, USA</li>
+                        </ul>
+
+                        <h3 style="font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 10px;">Contact</h3>
+                        <p style="font-size: 13px; line-height: 1.8;">
+                            Email: <a href="mailto:studio@yourdomain.com">studio@yourdomain.com</a><br>
+                            Instagram: <a href="https://instagram.com" target="_blank">@your_username</a>
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- JavaScript：幻灯片与导航逻辑 -->
+    <script>
+        const navLinks = document.querySelectorAll('.nav-link');
+        const sections = document.querySelectorAll('.gallery-section');
+        let currentSectionId = 'selected'; // 记录当前所在的分类
+
+        // 1. 点击左侧导航栏逻辑
+        navLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('data-target');
+                showSection(targetId);
+            });
+        });
+
+        function showSection(id) {
+            // 重置导航样式
+            navLinks.forEach(link => link.classList.remove('active'));
+            const activeLinks = document.querySelectorAll(`.nav-link[data-target="${id}"]`);
+            activeLinks.forEach(link => link.classList.add('active'));
+
+            // 隐藏所有区块
+            sections.forEach(section => section.classList.remove('active'));
+            
+            // 显示目标区块
+            const targetSection = document.getElementById(id);
+            targetSection.classList.add('active');
+            currentSectionId = id;
+
+            // 每次切换分类时，将幻灯片重置为第1张
+            const artworks = targetSection.querySelectorAll('.artwork');
+            artworks.forEach(a => a.classList.remove('active'));
+            if(artworks.length > 0) {
+                artworks[0].classList.add('active');
+            }
+            
+            updateCounter();
+        }
+
+        // 2. 左右点击翻页逻辑
+        function changeSlide(direction) {
+            const section = document.getElementById(currentSectionId);
+            const artworks = Array.from(section.querySelectorAll('.artwork'));
+            
+            // 如果该分类只有1张或0张幻灯片，无需翻页
+            if(artworks.length <= 1) return; 
+
+            // 寻找当前显示的幻灯片索引
+            let currentIndex = artworks.findIndex(a => a.classList.contains('active'));
+            artworks[currentIndex].classList.remove('active'); // 隐藏当前
+
+            // 计算下一张的索引
+            let nextIndex = currentIndex + direction;
+            
+            // 循环逻辑：到了最后一张，点右侧回到第一张；第一张点左侧，去到最后一张
+            if (nextIndex >= artworks.length) nextIndex = 0; 
+            if (nextIndex < 0) nextIndex = artworks.length - 1; 
+
+            // 显示下一张
+            artworks[nextIndex].classList.add('active');
+            updateCounter();
+        }
+
+        // 3. 更新右下角计数器 (例如: 1 / 4)
+        function updateCounter() {
+            const counter = document.getElementById('global-counter');
+            const section = document.getElementById(currentSectionId);
+            const artworks = Array.from(section.querySelectorAll('.artwork'));
+            
+            // 如果只有一张图（比如简历页面），则隐藏页码
+            if (artworks.length <= 1) {
+                counter.style.display = 'none'; 
+            } else {
+                counter.style.display = 'block';
+                const currentIndex = artworks.findIndex(a => a.classList.contains('active'));
+                counter.innerText = `${currentIndex + 1} / ${artworks.length}`;
+            }
+        }
+
+        // 网页加载时初始化页码
+        updateCounter();
+
+        // 额外：增加键盘左右方向键也能翻页的功能，提升专业体验
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight') {
+                changeSlide(1);
+            } else if (e.key === 'ArrowLeft') {
+                changeSlide(-1);
+            }
+        });
+    </script>
+</body>
+</html>
