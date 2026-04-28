@@ -364,33 +364,7 @@
 
             <!-- 0. Selected Works -->
             <section id="selected" class="gallery-section active">
-                <div id="selected-grid" class="selected-grid" aria-label="Selected Works">
-                    <button class="selected-thumb" type="button" data-target="project3" data-slide="1"><img src="三和弦/triad image -2.jpg" alt="Triad 1" loading="lazy"></button>
-                    <button class="selected-thumb" type="button" data-target="project2" data-slide="2"><img src="doing nothing/doing nothing image -2.jpg" alt="Doing Nothing 2" loading="lazy"></button>
-                    <button class="selected-thumb" type="button" data-target="project1" data-slide="9"><img src="distortion/distortion image -9.jpg" alt="Distortion 9" loading="lazy"></button>
-                    <button class="selected-thumb" type="button" data-target="project1" data-slide="3"><img src="distortion/distortion image -3.jpg" alt="Distortion 3" loading="lazy"></button>
-                    <button class="selected-thumb" type="button" data-target="project2" data-slide="1"><img src="doing nothing/doing nothing image -1.jpg" alt="Doing Nothing 1" loading="lazy"></button>
-                    <button class="selected-thumb" type="button" data-target="project3" data-slide="6"><img src="三和弦/triad image -22.jpg" alt="Triad 6" loading="lazy"></button>
-                    <button class="selected-thumb" type="button" data-target="project3" data-slide="9"><img src="三和弦/triad image -28.jpg" alt="Triad 9" loading="lazy"></button>
-                    <button class="selected-thumb" type="button" data-target="project1" data-slide="4"><img src="distortion/distortion image -4.jpg" alt="Distortion 4" loading="lazy"></button>
-                    <button class="selected-thumb" type="button" data-target="project1" data-slide="7"><img src="distortion/distortion image -7.jpg" alt="Distortion 7" loading="lazy"></button>
-                    <button class="selected-thumb" type="button" data-target="project3" data-slide="8"><img src="三和弦/triad image -27.jpg" alt="Triad 8" loading="lazy"></button>
-                    <button class="selected-thumb" type="button" data-target="project2" data-slide="5"><img src="doing nothing/doing nothing image -5.jpg" alt="Doing Nothing 5" loading="lazy"></button>
-                    <button class="selected-thumb" type="button" data-target="project3" data-slide="13"><img src="三和弦/triad image -14.jpg" alt="Triad 13" loading="lazy"></button>
-                    <button class="selected-thumb" type="button" data-target="project1" data-slide="5"><img src="distortion/distortion image -5.jpg" alt="Distortion 5" loading="lazy"></button>
-                    <button class="selected-thumb" type="button" data-target="project2" data-slide="4"><img src="doing nothing/doing nothing image -4.jpg" alt="Doing Nothing 4" loading="lazy"></button>
-                    <button class="selected-thumb" type="button" data-target="project3" data-slide="4"><img src="三和弦/triad image -20.jpg" alt="Triad 4" loading="lazy"></button>
-                    <button class="selected-thumb" type="button" data-target="project1" data-slide="1"><img src="distortion/distortion image -1.jpg" alt="Distortion 1" loading="lazy"></button>
-                    <button class="selected-thumb" type="button" data-target="project3" data-slide="7"><img src="三和弦/triad image -23.jpg" alt="Triad 7" loading="lazy"></button>
-                    <button class="selected-thumb" type="button" data-target="project2" data-slide="3"><img src="doing nothing/doing nothing image -3.jpg" alt="Doing Nothing 3" loading="lazy"></button>
-                    <button class="selected-thumb" type="button" data-target="project1" data-slide="8"><img src="distortion/distortion image -8.jpg" alt="Distortion 8" loading="lazy"></button>
-                    <button class="selected-thumb" type="button" data-target="project3" data-slide="11"><img src="三和弦/triad image -34.jpg" alt="Triad 11" loading="lazy"></button>
-                    <button class="selected-thumb" type="button" data-target="project3" data-slide="5"><img src="三和弦/triad image -21.jpg" alt="Triad 5" loading="lazy"></button>
-                    <button class="selected-thumb" type="button" data-target="project1" data-slide="6"><img src="distortion/distortion image -6.jpg" alt="Distortion 6" loading="lazy"></button>
-                    <button class="selected-thumb" type="button" data-target="project3" data-slide="2"><img src="三和弦/triad image -10.jpg" alt="Triad 2" loading="lazy"></button>
-                    <button class="selected-thumb" type="button" data-target="project2" data-slide="6"><img src="doing nothing/doing nothing image -6.jpg" alt="Doing Nothing 6" loading="lazy"></button>
-                    <button class="selected-thumb" type="button" data-target="project3" data-slide="12"><img src="三和弦/triad image -35.jpg" alt="Triad 12" loading="lazy"></button>
-                </div>
+                <div id="selected-grid" class="selected-grid" aria-label="Selected Works"></div>
             </section>
 
             <!-- 1. 个人项目 1: Distortion -->
@@ -656,16 +630,59 @@
 
         function buildSelectedGrid() {
             const grid = document.getElementById('selected-grid');
-            const selectedThumbs = Array.from(grid.querySelectorAll('.selected-thumb'));
+            const selectedWorks = getRandomSelectedWorks();
 
-            selectedThumbs.forEach((button, index) => {
+            selectedWorks.forEach((work, index) => {
+                const button = document.createElement('button');
+                button.className = 'selected-thumb';
+                button.type = 'button';
+                button.setAttribute('data-target', work.targetId);
+                button.setAttribute('data-slide', work.slideIndex);
                 button.setAttribute('aria-label', `Open selected work ${index + 1}`);
+
+                const thumb = document.createElement('img');
+                thumb.src = work.src;
+                thumb.alt = work.alt;
+                thumb.loading = 'lazy';
+
                 button.addEventListener('click', () => {
-                    const targetId = button.getAttribute('data-target');
-                    const slideIndex = Number(button.getAttribute('data-slide'));
-                    openProjectSlide(targetId, slideIndex);
+                    openProjectSlide(work.targetId, work.slideIndex);
                 });
+
+                button.appendChild(thumb);
+                grid.appendChild(button);
             });
+        }
+
+        function getRandomSelectedWorks() {
+            const projectIds = ['project1', 'project2', 'project3'];
+            const allProjectImages = projectIds.flatMap(projectId => {
+                const projectSection = document.getElementById(projectId);
+                const artworks = Array.from(projectSection.querySelectorAll('.artwork'));
+
+                return artworks.map((artwork, slideIndex) => {
+                    const image = artwork.querySelector('img');
+                    if (!image) return null;
+
+                    return {
+                        targetId: projectId,
+                        slideIndex,
+                        src: image.getAttribute('src'),
+                        alt: image.getAttribute('alt') || 'Selected Work'
+                    };
+                }).filter(Boolean);
+            });
+
+            return shuffleArray(allProjectImages).slice(0, 25);
+        }
+
+        function shuffleArray(items) {
+            const shuffled = [...items];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
         }
 
         function openProjectSlide(targetId, slideIndex) {
