@@ -165,6 +165,27 @@
             text-align: left;
         }
 
+        .about-layout {
+            width: min(900px, 100%);
+            display: flex;
+            align-items: flex-start;
+            gap: clamp(30px, 5vw, 70px);
+            position: relative;
+            z-index: 100;
+            pointer-events: auto;
+        }
+        .about-layout .project-statement {
+            flex: 1 1 0;
+            max-width: 560px;
+        }
+        .about-photo {
+            flex: 0 1 300px;
+            width: min(300px, 34vw);
+            height: auto;
+            display: block;
+            object-fit: contain;
+        }
+
         /* 自适应图片核心逻辑 */
         .artwork img {
             max-width: 100%;
@@ -332,6 +353,18 @@
             .project-statement {
                 max-width: 100%;
                 font-size: 13px;
+            }
+            .about-layout {
+                width: 100%;
+                max-height: 100%;
+                flex-direction: column;
+                gap: 22px;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            .about-photo {
+                width: min(100%, 320px);
+                align-self: flex-start;
             }
             .selected-grid {
                 position: relative;
@@ -619,31 +652,34 @@
             <!-- 5. CV & Contact -->
             <section id="about" class="gallery-section">
                 <div class="artwork">
-                    <div class="text-content project-statement" style="max-width: 600px;">
-                        <p style="margin-bottom: 30px; font-size: 16px;">
-                            舒运东，生于2003年，毕业于纽约视觉艺术学院（School of Visual Arts）的摄影与视频专业（BFA Photo&Video）。
-                        </p>
-                        
-                        <h3 style="font-size: 12px; text-transform: uppercase; color: #999; margin-bottom: 10px;">专业技能</h3>
-                        <ul style="margin-bottom: 30px; font-size: 13px; line-height: 2;">
-                            <li>精通胶片的拍摄</li>
-                            <li>黑白以及彩色暗房放大</li>
-                            <li>数码色彩管理</li>
-                            <li>数字艺术微喷技术</li>
-                        
-                            <li>熟悉商业时尚拍摄从规划到拍摄到后期交付的全流程</li>
-                        </ul>
+                    <div class="about-layout">
+                        <div class="text-content project-statement">
+                            <p style="margin-bottom: 30px; font-size: 16px;">
+                                舒运东，生于2003年，毕业于纽约视觉艺术学院（School of Visual Arts）的摄影与视频专业（BFA Photo&Video）。
+                            </p>
+                            
+                            <h3 style="font-size: 12px; text-transform: uppercase; color: #999; margin-bottom: 10px;">专业技能</h3>
+                            <ul style="margin-bottom: 30px; font-size: 13px; line-height: 2;">
+                                <li>精通胶片的拍摄</li>
+                                <li>黑白以及彩色暗房放大</li>
+                                <li>数码色彩管理</li>
+                                <li>数字艺术微喷技术</li>
+                            
+                                <li>熟悉商业时尚拍摄从规划到拍摄到后期交付的全流程</li>
+                            </ul>
 
-                        <h3 style="font-size: 12px; text-transform: uppercase; color: #999; margin-bottom: 10px;">主要作品</h3>
-                        <p style="margin-bottom: 30px; font-size: 13px; line-height: 1.8;">
-                            艺术项目多由个人经历和对世界的感知组成。主要作品为《无所事事》、《失真》、《三和弦》等。
-                        </p>
+                            <h3 style="font-size: 12px; text-transform: uppercase; color: #999; margin-bottom: 10px;">主要作品</h3>
+                            <p style="margin-bottom: 30px; font-size: 13px; line-height: 1.8;">
+                                艺术项目多由个人经历和对世界的感知组成。主要作品为《无所事事》、《失真》、《三和弦》等。
+                            </p>
 
-                        <h3 style="font-size: 12px; text-transform: uppercase; color: #999; margin-bottom: 10px;">Contact</h3>
-                        <p style="font-size: 13px; line-height: 1.8;">
-                            电话：+86 18010697255 (微信号同电话)<br>
-                            邮箱：<a href="mailto:2433549925@qq.com">2433549925@qq.com</a>
-                        </p>
+                            <h3 style="font-size: 12px; text-transform: uppercase; color: #999; margin-bottom: 10px;">Contact</h3>
+                            <p style="font-size: 13px; line-height: 1.8;">
+                                电话：+86 18010697255 (微信号同电话)<br>
+                                邮箱：<a href="mailto:2433549925@qq.com">2433549925@qq.com</a>
+                            </p>
+                        </div>
+                        <img class="about-photo" src="个人照片/9528fd3a07134b61db77e455548a56a3.jpg" alt="舒运东 portrait">
                     </div>
                 </div>
             </section>
