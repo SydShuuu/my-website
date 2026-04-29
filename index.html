@@ -354,16 +354,28 @@
                 max-width: 100%;
                 font-size: 13px;
             }
-            .about-layout {
-                width: 100%;
-                max-height: 100%;
-                flex-direction: column;
-                gap: 22px;
+            #about,
+            #about .artwork.active {
                 overflow-y: auto;
                 -webkit-overflow-scrolling: touch;
+                pointer-events: auto;
+            }
+            #about .artwork {
+                align-items: flex-start;
+                justify-content: flex-start;
+            }
+            .about-layout {
+                width: 100%;
+                min-height: max-content;
+                flex-direction: row;
+                gap: 14px;
+                align-items: flex-start;
+                padding-bottom: 24px;
             }
             .about-photo {
-                width: min(100%, 320px);
+                flex: 0 0 clamp(110px, 34vw, 150px);
+                width: clamp(110px, 34vw, 150px);
+                max-height: none;
                 align-self: flex-start;
             }
             .selected-grid {
@@ -756,8 +768,7 @@
         function getSelectedColumnCount(width) {
             if (width >= 1000) return 4;
             if (width >= 700) return 3;
-            if (width >= 430) return 2;
-            return 1;
+            return 2;
         }
 
         function getRandomSelectedWorks() {
