@@ -64,6 +64,15 @@
             margin-bottom: 50px;
             letter-spacing: 0.5px;
         }
+        .menu-toggle {
+            display: none;
+            border: 0;
+            padding: 0;
+            background: transparent;
+            color: #666;
+            font: inherit;
+            cursor: pointer;
+        }
         .nav-category {
             font-size: 11px;
             color: #999;
@@ -310,8 +319,8 @@
                 width: 100%;
                 flex: 0 0 auto;
                 height: auto;
-                max-height: 30vh;
-                max-height: 30dvh;
+                max-height: 46vh;
+                max-height: 46dvh;
                 padding: 15px 20px;
                 border-right: none;
                 border-bottom: 1px solid #f0f0f0;
@@ -319,8 +328,25 @@
                 -webkit-overflow-scrolling: touch;
             }
             .site-title {
-                margin-bottom: 20px;
+                margin-bottom: 4px;
                 font-size: 14px;
+            }
+            .site-subtitle {
+                margin-bottom: 10px;
+            }
+            .menu-toggle {
+                display: inline-block;
+                margin-bottom: 10px;
+                font-size: 13px;
+            }
+            .menu-toggle:hover {
+                text-decoration: underline;
+            }
+            .sidebar.menu-collapsed {
+                overflow-y: visible;
+            }
+            .sidebar.menu-collapsed .nav-menu {
+                display: none;
             }
             .nav-category {
                 margin: 15px 0 8px 0;
@@ -337,6 +363,12 @@
                 flex: 1;
                 min-height: 0;
                 overflow: hidden;
+            }
+            body[data-section="about"] .content {
+                align-items: stretch;
+                justify-content: flex-start;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
             }
             .gallery-section {
                 position: relative;
@@ -360,9 +392,21 @@
                 -webkit-overflow-scrolling: touch;
                 pointer-events: auto;
             }
+            body[data-section="about"] #about {
+                height: auto;
+                min-height: 100%;
+                overflow: visible;
+            }
+            body[data-section="about"] #about .artwork.active {
+                position: relative;
+                height: auto;
+                min-height: 100%;
+                overflow: visible;
+            }
             #about .artwork {
                 align-items: flex-start;
                 justify-content: flex-start;
+                z-index: 80;
             }
             .about-layout {
                 width: 100%;
@@ -410,6 +454,10 @@
             .nav-zone {
                 display: block;
             }
+            body[data-section="about"] .nav-zone,
+            body[data-section="selected"] .nav-zone {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -420,8 +468,9 @@
         <aside class="sidebar">
             <h1 class="site-title"><a href="#" class="nav-link" data-target="selected">舒运东</a></h1>
             <p class="site-subtitle">Yundong Shu</p>
+            <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-menu">展开菜单</button>
             
-            <ul class="nav-menu">
+            <ul class="nav-menu" id="main-menu">
                 <li><a href="#" class="nav-link active" data-target="selected">Selected Works</a></li>
                 
                 <div class="nav-category">Projects 项目</div>
@@ -703,16 +752,28 @@
     <script>
         const navLinks = document.querySelectorAll('.nav-link');
         const sections = document.querySelectorAll('.gallery-section');
+        const sidebar = document.querySelector('.sidebar');
+        const menuToggle = document.querySelector('.menu-toggle');
         const selectedSection = document.getElementById('selected');
         let currentSectionId = 'selected'; // 记录当前所在的分类
         let selectedWorks = [];
         let selectedColumnCount = 0;
         let resizeTimer;
 
+        document.body.dataset.section = currentSectionId;
         buildSelectedGrid();
+        syncMobileMenu();
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(renderSelectedGrid, 120);
+            resizeTimer = setTimeout(() => {
+                renderSelectedGrid();
+                syncMobileMenu();
+            }, 120);
+        });
+
+        menuToggle.addEventListener('click', () => {
+            const shouldExpand = sidebar.classList.contains('menu-collapsed');
+            setMenuExpanded(shouldExpand);
         });
 
         // 1. 点击左侧导航栏逻辑
@@ -721,8 +782,27 @@
                 e.preventDefault();
                 const targetId = this.getAttribute('data-target');
                 showSection(targetId);
+                if (window.matchMedia('(max-width: 800px)').matches && this !== document.querySelector('.site-title .nav-link')) {
+                    setMenuExpanded(false);
+                }
             });
         });
+
+        function syncMobileMenu() {
+            if (window.matchMedia('(max-width: 800px)').matches) {
+                setMenuExpanded(menuToggle.getAttribute('aria-expanded') === 'true');
+            } else {
+                sidebar.classList.remove('menu-collapsed');
+                menuToggle.setAttribute('aria-expanded', 'true');
+                menuToggle.textContent = '收起菜单';
+            }
+        }
+
+        function setMenuExpanded(isExpanded) {
+            sidebar.classList.toggle('menu-collapsed', !isExpanded);
+            menuToggle.setAttribute('aria-expanded', String(isExpanded));
+            menuToggle.textContent = isExpanded ? '收起菜单' : '展开菜单';
+        }
 
         function buildSelectedGrid() {
             selectedWorks = getRandomSelectedWorks();
@@ -827,6 +907,7 @@
             const targetSection = document.getElementById(id);
             targetSection.classList.add('active');
             currentSectionId = id;
+            document.body.dataset.section = id;
             selectedSection.classList.remove('selected-slideshow-mode');
 
             // 每次切换分类时，将幻灯片重置为第1张
