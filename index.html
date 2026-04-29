@@ -18,6 +18,7 @@
             line-height: 1.5;
             font-size: 14px;
             -webkit-font-smoothing: antialiased;
+            overflow: hidden;
         }
         a {
             color: #111111;
@@ -33,13 +34,17 @@
         .container {
             display: flex;
             height: 100vh; /* 固定为屏幕高度 */
-            width: 100vw;
+            height: 100dvh;
+            width: 100%;
+            min-width: 0;
         }
 
         /* ================= 左侧：项目导航栏 ================= */
         .sidebar {
             width: 260px;
+            flex: 0 0 260px;
             height: 100vh;
+            height: 100dvh;
             padding: 50px 40px;
             background-color: #ffffff;
             z-index: 100;
@@ -82,11 +87,15 @@
         .content {
             position: relative; /* 关键：为了绝对定位子元素 */
             flex: 1; /* 占据剩余全部宽度 */
+            min-width: 0;
+            min-height: 0;
             height: 100vh;
+            height: 100dvh;
             padding: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
         }
 
         /* 全局点击翻页热区 */
@@ -109,8 +118,12 @@
         /* 隐藏未激活的项目组 */
         .gallery-section {
             display: none;
+            position: relative;
             width: 100%;
             height: 100%;
+            min-width: 0;
+            min-height: 0;
+            overflow: hidden;
         }
         .gallery-section.active {
             display: block;
@@ -156,6 +169,8 @@
         .artwork img {
             max-width: 100%;
             max-height: 85vh; /* 留出底部空间给 caption */
+            max-height: 85dvh;
+            display: block;
             object-fit: contain; /* 保证图片比例完整呈现，不裁剪 */
             user-select: none; /* 防止双击时变蓝选中 */
         }
@@ -181,33 +196,46 @@
             position: absolute;
             inset: 0;
             z-index: 80;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-            gap: 16px;
-            align-content: start;
+            display: flex;
+            align-items: flex-start;
+            gap: clamp(12px, 1.6vw, 20px);
             overflow-y: auto;
-            padding: 20px 50px;
+            overflow-x: hidden;
+            padding: clamp(10px, 3vw, 20px) clamp(12px, 4vw, 50px);
             pointer-events: auto;
+            min-width: 0;
+            min-height: 0;
             animation: selectedGridFadeIn 0.7s ease both;
+            -webkit-overflow-scrolling: touch;
+        }
+        .selected-column {
+            flex: 1 1 0;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: clamp(12px, 1.6vw, 20px);
         }
         #selected.selected-slideshow-mode .selected-grid {
             display: none;
         }
         .selected-thumb {
             width: 100%;
-            aspect-ratio: 4 / 3;
+            min-width: 0;
+            min-height: 0;
             height: auto;
             border: 0;
             padding: 0;
             background: transparent;
             overflow: hidden;
             cursor: pointer;
+            display: block;
+            line-height: 0;
         }
         .selected-thumb img {
             width: 100%;
-            height: 100%;
+            height: auto;
+            max-width: 100%;
             display: block;
-            object-fit: cover;
             transition: transform 0.28s ease;
         }
         .selected-thumb:hover img {
@@ -236,6 +264,17 @@
         }
 
         /* ================= 移动端响应式 ================= */
+        @media (max-width: 1100px) and (min-width: 801px) {
+            .sidebar {
+                width: 220px;
+                flex-basis: 220px;
+                padding: 40px 28px;
+            }
+            .content {
+                padding: 28px;
+            }
+        }
+
         @media (max-width: 800px) {
             body {
                 overflow-x: hidden;
@@ -248,8 +287,10 @@
             }
             .sidebar {
                 width: 100%;
+                flex: 0 0 auto;
                 height: auto;
                 max-height: 30vh;
+                max-height: 30dvh;
                 padding: 15px 20px;
                 border-right: none;
                 border-bottom: 1px solid #f0f0f0;
@@ -295,26 +336,26 @@
             .selected-grid {
                 position: relative;
                 inset: auto;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 8px;
+                gap: 10px;
                 padding: 10px;
                 height: 100%;
-                grid-auto-rows: clamp(120px, 32vw, 180px);
                 overflow-y: auto;
+                overflow-x: hidden;
                 -webkit-overflow-scrolling: touch;
                 touch-action: pan-y;
+            }
+            .selected-column {
+                gap: 10px;
             }
             .selected-thumb {
                 display: block;
                 min-width: 0;
                 width: 100%;
-                height: 100%;
-                aspect-ratio: auto;
+                height: auto;
             }
             .selected-thumb img {
                 width: 100%;
-                height: 100%;
-                object-fit: cover;
+                height: auto;
             }
             .slide-counter {
                 bottom: 10px;
@@ -616,8 +657,15 @@
         const sections = document.querySelectorAll('.gallery-section');
         const selectedSection = document.getElementById('selected');
         let currentSectionId = 'selected'; // 记录当前所在的分类
+        let selectedWorks = [];
+        let selectedColumnCount = 0;
+        let resizeTimer;
 
         buildSelectedGrid();
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(renderSelectedGrid, 120);
+        });
 
         // 1. 点击左侧导航栏逻辑
         navLinks.forEach(link => {
@@ -629,8 +677,23 @@
         });
 
         function buildSelectedGrid() {
+            selectedWorks = getRandomSelectedWorks();
+            renderSelectedGrid();
+        }
+
+        function renderSelectedGrid() {
             const grid = document.getElementById('selected-grid');
-            const selectedWorks = getRandomSelectedWorks();
+            const columnCount = getSelectedColumnCount(grid.clientWidth);
+            if (columnCount === selectedColumnCount && grid.children.length > 0) return;
+
+            selectedColumnCount = columnCount;
+            grid.innerHTML = '';
+            const columns = Array.from({ length: columnCount }, () => {
+                const column = document.createElement('div');
+                column.className = 'selected-column';
+                grid.appendChild(column);
+                return column;
+            });
 
             selectedWorks.forEach((work, index) => {
                 const button = document.createElement('button');
@@ -650,8 +713,15 @@
                 });
 
                 button.appendChild(thumb);
-                grid.appendChild(button);
+                columns[index % columnCount].appendChild(button);
             });
+        }
+
+        function getSelectedColumnCount(width) {
+            if (width >= 1000) return 4;
+            if (width >= 700) return 3;
+            if (width >= 430) return 2;
+            return 1;
         }
 
         function getRandomSelectedWorks() {
