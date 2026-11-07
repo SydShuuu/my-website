@@ -246,7 +246,6 @@
             pointer-events: auto;
             min-width: 0;
             min-height: 0;
-            animation: selectedGridFadeIn 0.7s ease both;
             -webkit-overflow-scrolling: touch;
         }
         .selected-column {
@@ -288,14 +287,13 @@
         .selected-thumb-static:hover img {
             transform: none;
         }
-        @keyframes selectedGridFadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
+        @media (prefers-reduced-motion: reduce) {
+            .artwork,
+            .selected-thumb img {
+                transition: none;
             }
-            to {
-                opacity: 1;
-                transform: translateY(0);
+            .selected-thumb:hover img {
+                transform: none;
             }
         }
 
@@ -840,9 +838,12 @@
         const sidebar = document.querySelector('.sidebar');
         const menuToggle = document.querySelector('.menu-toggle');
         const selectedSection = document.getElementById('selected');
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const photoEasing = 'cubic-bezier(.2, .7, .2, 1)';
         let currentSectionId = 'selected'; // 记录当前所在的分类
         let selectedWorks = [];
         let selectedColumnCount = 0;
+        let firstSelectedVisit = true;
         let resizeTimer;
 
         document.body.dataset.section = currentSectionId;
@@ -899,6 +900,7 @@
             const columnCount = getSelectedColumnCount(grid.clientWidth);
             if (columnCount === selectedColumnCount && grid.children.length > 0) return;
 
+            const firstRender = selectedColumnCount === 0;
             selectedColumnCount = columnCount;
             grid.innerHTML = '';
             const columns = Array.from({ length: columnCount }, () => {
@@ -919,9 +921,21 @@
                 }
 
                 const thumb = document.createElement('img');
-                thumb.src = work.src;
                 thumb.alt = work.alt;
                 thumb.loading = 'lazy';
+
+                if (firstRender && index < columnCount * 2) {
+                    thumb.addEventListener('load', () => {
+                        if (reducedMotion.matches || !firstSelectedVisit || !thumb.isConnected || grid.scrollTop > 0) return;
+                        if (thumbWrapper.getBoundingClientRect().top >= grid.getBoundingClientRect().bottom) return;
+
+                        thumbWrapper.animate([
+                            { opacity: 0, transform: 'translateY(10px)' },
+                            { opacity: 1, transform: 'translateY(0)' }
+                        ], { duration: 320, delay: index * 55, easing: photoEasing, fill: 'backwards' });
+                    }, { once: true });
+                }
+                thumb.src = work.src;
 
                 if (work.targetId) {
                     thumbWrapper.addEventListener('click', () => {
@@ -1006,6 +1020,7 @@
             const targetSection = document.getElementById(id);
             targetSection.classList.add('active');
             currentSectionId = id;
+            if (id !== 'selected') firstSelectedVisit = false;
             document.body.dataset.section = id;
             selectedSection.classList.remove('selected-slideshow-mode');
 
@@ -1041,7 +1056,19 @@
             if (nextIndex < 0) nextIndex = artworks.length - 1; 
 
             // 显示下一张
-            artworks[nextIndex].classList.add('active');
+            const nextArtwork = artworks[nextIndex];
+            nextArtwork.classList.add('active');
+            const photo = nextArtwork.querySelector(':scope > img');
+            if (photo && !reducedMotion.matches) {
+                const offset = Math.min(20, Math.max(0, (nextArtwork.clientWidth - photo.offsetWidth) / 2));
+                photo.getAnimations().forEach(animation => animation.cancel());
+                if (offset > 0) {
+                    photo.animate([
+                        { transform: `translateX(${direction * offset}px)` },
+                        { transform: 'translateX(0)' }
+                    ], { duration: 300, easing: photoEasing });
+                }
+            }
             updateCounter();
         }
 
